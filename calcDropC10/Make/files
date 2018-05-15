@@ -1,0 +1,3 @@
+calcDropC10.C
+
+EXE = $(FOAM_APPBIN)/calcDropC10
