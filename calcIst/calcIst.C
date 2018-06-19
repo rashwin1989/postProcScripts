@@ -47,9 +47,6 @@ int main(int argc, char *argv[])
     fileName outputFile1("ist_vs_t");
     OFstream os(runTime.path()/outputFile1);
 
-    fileName outputFile2("massOut_vs_t");
-    OFstream outFlow(runTime.path()/outputFile2);
-
     //scalar pi = Foam::constant::mathematical::pi;
 
     //scalar dz;
