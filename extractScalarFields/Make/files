@@ -1,3 +1,0 @@
-extractScalarFields.C
-
-EXE = $(FOAM_APPBIN)/extractScalarFields
