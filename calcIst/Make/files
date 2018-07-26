@@ -1,0 +1,3 @@
+calcIst.C
+
+EXE = $(FOAM_APPBIN)/calcIst
