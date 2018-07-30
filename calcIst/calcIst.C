@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
     //scalar pi = Foam::constant::mathematical::pi;
 
     //scalar dz;
-    //dz = runTime.controlDict().lookupOrDefault("dz",0.0001);    
+    //dz = runTime.controlDict().lookupOrDefault("dz",0.001);    
 
     scalar AInterface;
     scalar VolPhase0;
