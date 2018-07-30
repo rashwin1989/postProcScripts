@@ -1,0 +1,48 @@
+volScalarField C10
+        (
+            IOobject
+            (
+                "C10",
+                runTime.timeName(),
+                mesh,
+                IOobject::MUST_READ,
+                IOobject::NO_WRITE
+            ),
+            mesh
+        ); 
+
+        volScalarField A_intfc
+        (
+            IOobject
+            (
+                "A_intfc",
+                runTime.timeName(),
+                mesh,
+                IOobject::MUST_READ,
+                IOobject::NO_WRITE
+            ),
+            mesh
+        ); 
+
+        if((runTime.value() - 0.005) < 1e-5)
+        {
+            ATot_0 = 0;
+            C10Tot_0 = 0;    
+            forAll(C10.internalField(), cellI)
+            {                 
+                ATot_0 += A_intfc.internalField()[cellI];
+                C10Tot_0 += V[cellI]*C10.internalField()[cellI];
+            }
+        }
+               
+        ATot = 0;
+        C10Tot = 0;        
+        
+        forAll(C10.internalField(), cellI)
+        { 
+            C10Tot += V[cellI]*C10.internalField()[cellI];
+            ATot += A_intfc.internalField()[cellI];                        
+        }                
+        
+        os<< runTime.value() << "    " << C10Tot/C10Tot_0 << "    " << ATot/ATot_0
+          << endl;
