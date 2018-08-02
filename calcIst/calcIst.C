@@ -34,6 +34,8 @@ Description
 #include "OFstream.H"
 #include "fileName.H"
 
+// #include <math.h>
+
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 int main(int argc, char *argv[])
@@ -44,13 +46,20 @@ int main(int argc, char *argv[])
 
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-    fileName outputFile1("ist_vs_t");
+    string opFileName = "ist_vs_t";
+    if(argc > 1)
+      {
+          string opFileExt(argv[1]);
+          opFileName = opFileName + opFileExt;
+      }
+
+    fileName outputFile1(opFileName);
     OFstream os(runTime.path()/outputFile1);
 
     //scalar pi = Foam::constant::mathematical::pi;
 
     //scalar dz;
-    //dz = runTime.controlDict().lookupOrDefault("dz",0.0001);    
+    //dz = runTime.controlDict().lookupOrDefault("dz",0.001);    
 
     scalar AInterface;
     scalar VolPhase0;
@@ -66,7 +75,8 @@ int main(int argc, char *argv[])
     scalar mDot01;
     scalar mDot10;
     scalar mDot11;
-
+    scalar MS00 = 0;
+    double sqrt2 = 1.41421356;
 
     const scalar rho0 = 275;
     const scalar rho1 = 900;
@@ -211,14 +221,15 @@ int main(int argc, char *argv[])
         mDot10 = 0;
         mDot11 = 0;
 
-       label frontBackID = mesh.boundaryMesh().findPatchID("frontAndBack");
+       label frontBackID    = mesh.boundaryMesh().findPatchID("frontAndBack");
+       label defaultFacesID = mesh.boundaryMesh().findPatchID("defaultFaces");
          
 
         forAll(mesh.boundaryMesh(), outletID)
         {
             Info << "Patch " << outletID << endl;
 
-            if(outletID != frontBackID)
+            if((outletID != frontBackID)&&(outletID != defaultFacesID))
             {
 
         forAll(mesh.boundaryMesh()[outletID], faceI)
@@ -271,12 +282,83 @@ int main(int argc, char *argv[])
 
      // Done Calculating Vorticity Field
 
+     //  Calculating Q Field
 
-     // Writing to file ist)vs_t
 
-        os<< runTime.value() << "    " << AInterface << "    " <<VolPhase0 << "    " << VolPhase1 << "    " << m00 << "    " << m01 << "    " << m10 << "    " << m11 << "    " << velWaterPhase.y() << "    " << velOilPhase.y() << "    " << mDot00 << "    " << mDot01  << "    " << mDot10  << "    " << mDot11  << "    "  << endl;
+         volScalarField QCriterion
+            (
+            IOobject
+            (
+                "QCriterion",
+                runTime.timeName(),
+                mesh,
+                IOobject::NO_READ,
+                IOobject::AUTO_WRITE
+            ),
+            0.5*mag(skew(fvc::grad(U)))*mag(skew(fvc::grad(U))) - mag(symm(fvc::grad(U)))*mag(symm(fvc::grad(U)))
+            );
 
-     // Done Writing to file ist)vs_t
+        QCriterion.write();
+
+     // Done Calculating Q Field
+
+     // Calculate net mass source terms
+
+     IOobject mS00Header
+         (
+             "mS00",
+             runTime.timeName(),
+             mesh,
+             IOobject::MUST_READ
+         );
+
+     if (mS00Header.headerOk())
+     {
+
+         volScalarField mS00(mS00Header, mesh);
+
+         MS00 = 0;
+
+        forAll(mS00.internalField(), cellI)
+        { 
+            MS00 += V[cellI]*mS00.internalField()[cellI];
+        }
+     }
+
+     else
+     {
+         Info<< "    No mS00 file" << endl;
+     }
+
+
+     // Done calculating net mass source terms
+
+     //  Calculating Strain Rate Field
+
+
+         volScalarField magStrainRate
+            (
+            IOobject
+            (
+                "magStrainRate",
+                runTime.timeName(),
+                mesh,
+                IOobject::NO_READ,
+                IOobject::AUTO_WRITE
+            ),
+            sqrt2*mag(symm(fvc::grad(U)))
+            );
+
+        magStrainRate.write();
+
+     // Done Calculating Strain Rate Field
+
+
+     // Writing to file ist_vs_t
+
+     os<< runTime.value() << "    " << AInterface << "    " <<VolPhase0 << "    " << VolPhase1 << "    " << m00 << "    " << m01 << "    " << m10 << "    " << m11 << "    " << velWaterPhase.y() << "    " << velOilPhase.y() << "    " << mDot00 << "    " << mDot01  << "    " << mDot10  << "    " << mDot11  << "    " << MS00  << endl;
+
+     // Done Writing to file ist_vs_t
 
         runTime.write();
     }        
